@@ -5,8 +5,6 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -17,16 +15,15 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 public class LogAspect {
-    private final Logger logger =  LoggerFactory.getLogger(this.getClass());
 
     //BookService의 모든 메서드
     @Around("execution(* com.example.aop.service.BookService.*(..))")
 //    @Around("execution(* com.example.aop.controller..*.*(..))")
 //    @Around("execution(* com.example.aop..*.*(..))")
     public Object logging(ProceedingJoinPoint pjp) throws Throwable {
-        logger.info("start - " + pjp.getSignature().getDeclaringTypeName() + " / " + pjp.getSignature().getName());
+        log.info("start - " + pjp.getSignature().getDeclaringTypeName() + " / " + pjp.getSignature().getName());
         Object result = pjp.proceed();
-        logger.info("finished - " + pjp.getSignature().getDeclaringTypeName() + " / " + pjp.getSignature().getName());
+        log.info("finished - " + pjp.getSignature().getDeclaringTypeName() + " / " + pjp.getSignature().getName());
         return result;
     }
 
@@ -76,6 +73,32 @@ public class LogAspect {
     private Method getMethod(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         return signature.getMethod();
+    }
+
+
+    // controller 패키지에서 *Controller 클래스에 있는 메서드 중 파라미터 0개인 메서드만
+    // service 패키지에서 *Service 클래스에 있는 메서드 중 파라미터 0개인 메서드만
+    @Around("execution(* com.example.aop.controller.*Controller.*()) || execution(* com.example.aop..service.*Service.*())")
+    public Object printLog(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        log.info(">>> This - '" + joinPoint.getThis() + "'"); // Advice 를 행하는 객체
+        log.info(">>> Kind - '" + joinPoint.getKind() + "'"); // 해당 Advice 의 타입
+        log.info(">>> Target - '" + joinPoint.getTarget() + "'"); // Target 객체
+
+        String type = "";
+        String name = joinPoint.getSignature().getDeclaringTypeName();
+        // getSignature() : 실행되는 대상 객체의 메서드에 대한 정보를 가지고 옴
+
+        if (name.contains("Controller")) {
+            type = ">>> Controller - '";
+
+        } else if (name.contains("Service")) {
+            type = ">>> Service - '";
+        }
+
+        log.info(type + name + "." + joinPoint.getSignature().getName() + "()'");
+        // getName - 메서드 이름
+        return joinPoint.proceed();
     }
 }
 
